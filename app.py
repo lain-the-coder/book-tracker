@@ -130,5 +130,24 @@ def update_book(book_id):
 
     return jsonify(updated_book)
 
+# DELETE route
+@app.route('/books/<int:book_id>', methods=['DELETE'])
+def delete_book(book_id):
+    conn = sqlite3.connect('books.db')
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT * FROM books where id = ?', (book_id,))
+    book = cursor.fetchone()
+
+    if book is None:
+        conn.close()
+        return jsonify({'error': 'Book not found'}), 404
+    
+    cursor.execute('DELETE FROM books where id = ?', (book_id,))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': f'Book {book_id} deleted successfully'}), 200
+
 if __name__ == '__main__':
     app.run(debug=True)
