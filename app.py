@@ -84,5 +84,51 @@ def create_book():
     }
     return jsonify(new_book), 201
 
+# PUT route
+@app.route('/books/<int:book_id>', methods=['PUT'])
+def update_book(book_id):
+    data = request.get_json()
+    title = data.get('title')
+    author = data.get('author')
+    genre = data.get('genre', '')
+    status = data.get('status')
+
+    # Title/Author/Status validation
+    if not title:
+        return jsonify({'error': 'Title is required'}), 400
+    if not author:
+        return jsonify({'error': 'Author is required'}), 400
+    if not status:
+        return jsonify({'error': 'Status is required'}), 400
+    
+    conn = sqlite3.connect('books.db')
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT * FROM books WHERE id = ?', (book_id,))
+    book = cursor.fetchone()
+
+    if book is None:
+        conn.close()
+        return jsonify({'error': 'Book not found'}), 404
+    
+    cursor.execute('''
+    UPDATE books
+    SET title = ?, author = ?, genre = ?, status = ?
+    WHERE id = ?
+    ''', (title, author, genre, status, book_id))
+
+    conn.commit()
+    conn.close()
+
+    updated_book = {
+        'id': book_id,
+        'title': title,
+        'author': author,
+        'genre': genre,
+        'status': status
+    }
+
+    return jsonify(updated_book)
+
 if __name__ == '__main__':
     app.run(debug=True)
